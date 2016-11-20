@@ -1,1 +1,3 @@
-console.log("hello");
+import core from './core';
+
+console.log(core);
