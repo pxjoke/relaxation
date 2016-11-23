@@ -1,18 +1,17 @@
 import math from 'mathjs';
 
 export default class ER {
-    constructor() {
+    constructor(coefficients, startPoint, s) {
         this.debug = true;
 
         this.e = math.eye(2);
         this.d = math.zeros(2, 2);
-        this.s = 0.2;
-        this.x = math.matrix([-1, -1]);
+        this.s = s;
+        this.x = math.matrix(startPoint);
         this.xl = this.x;
         this.f = math.zeros(2);
         this.J = function (x) {
-            let k = 5.0;
-            return (5 * k * k + 0.45) * x._data[0] * x._data[0] - 29.7 * k * x._data[0] * x._data[1] + (0.05 * k * k + 45) * x._data[1] * x._data[1] - (k * k + 9) * x._data[0] / k - (k * k + 9) * x._data[1] / k;
+            return coefficients.a * x._data[0] * x._data[0] + coefficients.b * x._data[0] * x._data[1] + coefficients.c * x._data[1] * x._data[1] + coefficients.d * x._data[0] + coefficients.e * x._data[1];
         };
         this.Jl = this.J(this.x);
         this.iterations = 1;
@@ -32,8 +31,9 @@ export default class ER {
 
     run() {
         let {e, d, s, x, xl, f, J, Jl, iterations} = this;
+        this.result = [];
 
-        for (let k = 1; k <= iterations; k++) {
+        while(!this.result.length || (this.result[this.result.length-1] - this.result[this.result.length-2]) > 0.00001) {
             this.computeDMatrix();
             this.computeFMatrix();
             this.D = math.norm(d, 1);
@@ -119,10 +119,20 @@ export default class ER {
             if (Jt < Jl) {
                 Jl = Jt;
                 xl = xt;
+                this.result.push({
+                    x: xl._data[0],
+                    y: xl._data[1],
+                    label: Jl
+                });
             }
             H = math.multiply(H, math.add(e.map(elem => 2*elem), math.multiply(d, H).map(elem => -elem)));
             this.xl = xl;
+            this.Jl = Jl;
         }
+    }
+
+    getFinalPoint() {
+        return this.result[this.result.length - 1];
     }
 
 
